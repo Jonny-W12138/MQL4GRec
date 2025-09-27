@@ -13,7 +13,7 @@ from transformers import LlamaForCausalLM, LlamaTokenizer, LlamaConfig, AutoToke
 
 # 全局变量
 DATASET = 'Sports'
-ROOT = "./"
+ROOT = "/kaggle/working/MQL4GRec"
 GPU_IDS = [0, 1]  # 使用两个GPU
 PLM_NAME = 'llama'
 MODEL_NAME_OR_PATH = 'huggyllama/llama-7b'
