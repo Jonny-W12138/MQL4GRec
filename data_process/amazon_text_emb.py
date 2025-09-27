@@ -9,7 +9,8 @@ import torch
 from tqdm import tqdm
 import numpy as np
 from utils import *
-from transformers import LlamaForCausalLM, LlamaTokenizer, LlamaConfig, AutoTokenizer, AutoModel
+from transformers import LlamaForCausalLM, LlamaTokenizer, AutoTokenizer, AutoModel
+from accelerate import Accelerator
 
 # 全局变量
 DATASET = 'Sports'
@@ -20,6 +21,7 @@ MODEL_NAME_OR_PATH = 'huggyllama/llama-7b'
 MODEL_CACHE_DIR = '/kaggle/tmp/cache_model'
 MAX_SENT_LEN = 2048
 WORD_DROP_RATIO = -1  # 默认不丢弃单词
+BATCH_SIZE = 2  # 进一步降低batch_size以减少显存需求
 
 def load_data():
     item2feature_path = os.path.join(ROOT, f'{DATASET}.item.json')
@@ -45,7 +47,7 @@ def preprocess_text():
     item_text_list = generate_text(item2feature, ['title', 'description'])
     return item_text_list
 
-def generate_item_embedding(item_text_list, tokenizer, model, word_drop_ratio=-1):
+def generate_item_embedding(item_text_list, tokenizer, model, accelerator, word_drop_ratio=-1):
     print(f'Generate Text Embedding: ')
     print(' Dataset: ', DATASET)
     
@@ -57,12 +59,12 @@ def generate_item_embedding(item_text_list, tokenizer, model, word_drop_ratio=-1
         assert text != [0]
 
     embeddings = []
-    start, batch_size = 0, 1  # 增加batch_size以利用多GPU
+    start = 0
     with torch.no_grad():
         while start < len(order_texts):
-            if (start + batch_size) % 100 == 0:
-                print("==>", start + batch_size)
-            field_texts = order_texts[start: start + batch_size]
+            if (start + BATCH_SIZE) % 100 == 0:
+                print(f"==> Processing batch {start + BATCH_SIZE}")
+            field_texts = order_texts[start: start + BATCH_SIZE]
             field_texts = list(zip(*field_texts))
     
             field_embeddings = []
@@ -82,7 +84,16 @@ def generate_item_embedding(item_text_list, tokenizer, model, word_drop_ratio=-1
                         new_sentences.append(new_sent)
                     sentences = new_sentences
                 encoded_sentences = tokenizer(sentences, max_length=MAX_SENT_LEN,
-                                            truncation=True, return_tensors='pt', padding="longest").to(DEVICE)
+                                            truncation=True, return_tensors='pt', padding="longest")
+                
+                # 使用accelerator准备输入数据
+                encoded_sentences = accelerator.prepare(encoded_sentences)
+                
+                # 打印显存使用情况
+                if torch.cuda.is_available():
+                    for i in range(torch.cuda.device_count()):
+                        print(f"GPU memory allocated: {torch.cuda.memory_allocated(i)/1e9:.2f} GB on cuda:{i}")
+                
                 outputs = model(input_ids=encoded_sentences.input_ids,
                               attention_mask=encoded_sentences.attention_mask)
     
@@ -90,10 +101,14 @@ def generate_item_embedding(item_text_list, tokenizer, model, word_drop_ratio=-1
                 mean_output = masked_output.sum(dim=1) / encoded_sentences['attention_mask'].sum(dim=-1, keepdim=True)
                 mean_output = mean_output.detach().cpu()
                 field_embeddings.append(mean_output)
+                
+                # 释放显存
+                del encoded_sentences, outputs, masked_output
+                torch.cuda.empty_cache()
     
             field_mean_embedding = torch.stack(field_embeddings, dim=0).mean(dim=0)
             embeddings.append(field_mean_embedding)
-            start += batch_size
+            start += BATCH_SIZE
 
     embeddings = torch.cat(embeddings, dim=0).numpy()
     print('Embeddings shape: ', embeddings.shape)
@@ -104,24 +119,20 @@ def generate_item_embedding(item_text_list, tokenizer, model, word_drop_ratio=-1
 if __name__ == '__main__':
     ROOT = os.path.join(ROOT, DATASET)
     
-    # 设置多GPU设备
-    DEVICE = torch.device(f"cuda:{GPU_IDS[0]}" if torch.cuda.is_available() else "cpu")
-    if torch.cuda.device_count() > 1:
-        print(f"Using {len(GPU_IDS)} GPUs!")
-        os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(map(str, GPU_IDS))
+    # 初始化Accelerator
+    accelerator = Accelerator(mixed_precision="fp16")  # 使用混合精度以减少显存占用
+    
+    print(f"Using {accelerator.num_processes} GPUs!")
     
     item_text_list = preprocess_text()
     
-    # kwargs = {"cache_dir": MODEL_CACHE_DIR, "local_files_only": os.path.exists(MODEL_CACHE_DIR)}
     kwargs = {"cache_dir": MODEL_CACHE_DIR}
     plm_tokenizer, plm_model = load_plm(MODEL_NAME_OR_PATH, kwargs)
     
     if plm_tokenizer.pad_token_id is None:
         plm_tokenizer.pad_token_id = 0
     
-    # 使用DataParallel包装模型以支持多GPU
-    plm_model = plm_model.to(DEVICE)
-    if torch.cuda.device_count() > 1:
-        plm_model = torch.nn.DataParallel(plm_model, device_ids=GPU_IDS)
+    # 使用accelerator准备模型
+    plm_model = accelerator.prepare(plm_model)
     
-    generate_item_embedding(item_text_list, plm_tokenizer, plm_model, word_drop_ratio=WORD_DROP_RATIO)
+    generate_item_embedding(item_text_list, plm_tokenizer, plm_model, accelerator, word_drop_ratio=WORD_DROP_RATIO)
