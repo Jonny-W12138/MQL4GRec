@@ -174,7 +174,7 @@ def preprocess_rating(args):
     print('Process rating data: ')
     print(' Dataset: ', args.dataset)
     
-    images_info_file = os.path.join(args.input_path, 'Images', f'{args.dataset}_images_info.json')
+    images_info_file = os.path.join(args.input_path, 'Images', args.dataset, f'{args.dataset}_images_info.json')
     images_info = load_json(images_info_file)
 
 
@@ -264,11 +264,11 @@ def convert_to_atomic_files(args, train_data, valid_data, test_data):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', type=str, default='Instruments', help='Instruments / Arts / Games')
+    parser.add_argument('--dataset', type=str, default='Sports', help='Instruments / Arts / Games')
     parser.add_argument('--user_k', type=int, default=5, help='user k-core filtering')
     parser.add_argument('--item_k', type=int, default=5, help='item k-core filtering')
-    parser.add_argument('--input_path', type=str, default='/datasets/datasets/amazon18')
-    parser.add_argument('--output_path', type=str, default='/datasets/datasets/LC-Rec_image')
+    parser.add_argument('--input_path', type=str, default='./datasets/amazon18')
+    parser.add_argument('--output_path', type=str, default='./datasets/LC-Rec_image')
     return parser.parse_args()
 
 
@@ -280,7 +280,7 @@ if __name__ == '__main__':
     # amazon18_dataset_list = ['Cell', 'Food', 'Movies', 'Pet']
     # amazon18_dataset_list = ['Scientific', 'Pantry', 'Office']
     # amazon18_dataset_list = ['Automotive', 'CDs', 'Electronics', 'Sports', 'Tools', 'Toys']
-    amazon18_dataset_list = ['Home']
+    amazon18_dataset_list = ['Sports']
     for dataset in amazon18_dataset_list:
         
         print('\n' + '=' * 20 + '\n')
