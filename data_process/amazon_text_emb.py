@@ -57,7 +57,7 @@ def generate_item_embedding(item_text_list, tokenizer, model, word_drop_ratio=-1
         assert text != [0]
 
     embeddings = []
-    start, batch_size = 0, 8  # 增加batch_size以利用多GPU
+    start, batch_size = 0, 1  # 增加batch_size以利用多GPU
     with torch.no_grad():
         while start < len(order_texts):
             if (start + batch_size) % 100 == 0:
