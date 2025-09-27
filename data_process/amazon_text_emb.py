@@ -112,7 +112,8 @@ if __name__ == '__main__':
     
     item_text_list = preprocess_text()
     
-    kwargs = {"cache_dir": MODEL_CACHE_DIR, "local_files_only": os.path.exists(MODEL_CACHE_DIR)}
+    # kwargs = {"cache_dir": MODEL_CACHE_DIR, "local_files_only": os.path.exists(MODEL_CACHE_DIR)}
+    kwargs = {"cache_dir": MODEL_CACHE_DIR}
     plm_tokenizer, plm_model = load_plm(MODEL_NAME_OR_PATH, kwargs)
     
     if plm_tokenizer.pad_token_id is None:
