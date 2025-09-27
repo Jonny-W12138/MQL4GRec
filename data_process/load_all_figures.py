@@ -177,11 +177,11 @@ def main(args, meta_items):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', type=str, default='Arts', help='Instruments / Arts / Games')
-    parser.add_argument('--meta_data_path', type=str, default='/datasets/datasets/amazon18/Metadata')
-    parser.add_argument('--rating_data_path', type=str, default='/datasets/datasets/amazon18/Ratings')
-    parser.add_argument('--review_data_path', type=str, default='/datasets/datasets/amazon18/Review')
-    parser.add_argument('--save_path', type=str, default='/datasets/datasets/amazon18/Images')
+    parser.add_argument('--dataset', type=str, default='Sports', help='Instruments / Arts / Games')
+    parser.add_argument('--meta_data_path', type=str, default='./datasets/amazon18/Metadata')
+    parser.add_argument('--rating_data_path', type=str, default='./datasets/amazon18/Ratings')
+    parser.add_argument('--review_data_path', type=str, default='./datasets/amazon18/Review')
+    parser.add_argument('--save_path', type=str, default='./datasets/amazon18/Images')
     return parser.parse_args()
 
 if __name__ == "__main__":
