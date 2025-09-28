@@ -77,7 +77,7 @@ class VectorQuantizer(nn.Module):
         else:
             embeddings_weight = self.embedding.weight
 
-        # Calculate the L2 Norm between latent and Embedded weights
+        # Calculate the L2 Norm between latent and Embedded weight d: [bs, embeddings_weight.size()]
         d = torch.sum(latent**2, dim=1, keepdim=True) + \
             torch.sum(embeddings_weight**2, dim=1, keepdim=True).t()- \
             2 * torch.matmul(latent, embeddings_weight.t())
@@ -103,7 +103,7 @@ class VectorQuantizer(nn.Module):
         # compute loss for embedding
         commitment_loss = F.mse_loss(x_q.detach(), x)
         codebook_loss = F.mse_loss(x_q, x.detach())
-        loss = codebook_loss + self.beta * commitment_loss
+        loss = codebook_loss + self.beta * commitment_loss # self.beta = 0.25
 
         # preserve gradients
         x_q = x + (x_q - x).detach()

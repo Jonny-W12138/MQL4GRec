@@ -1,8 +1,6 @@
 import torch
 import torch.nn as nn
-
 from .vq import VectorQuantizer
-
 
 class ResidualVectorQuantizer(nn.Module):
     """ References:
@@ -51,8 +49,8 @@ class ResidualVectorQuantizer(nn.Module):
             all_indices.append(indices)
             all_distances.append(distance)
 
-        mean_losses = torch.stack(all_losses).mean()
-        all_indices = torch.stack(all_indices, dim=-1)
-        all_distances = torch.stack(all_distances, dim=1)
+        mean_losses = torch.stack(all_losses).mean() # shape:[](标量)
+        all_indices = torch.stack(all_indices, dim=-1) # [bs, num_quantizers]
+        all_distances = torch.stack(all_distances, dim=1) # [bs, num_quantizers, num_embeddings]
 
         return x_q, mean_losses, all_indices, all_distances
