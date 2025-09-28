@@ -36,7 +36,7 @@ def parse_args():
     parser.add_argument('--sk_epsilons', type=float, nargs='+', default=[0.0, 0.0, 0.0, 0.003], help="sinkhorn epsilons")
     parser.add_argument("--sk_iters", type=int, default=50, help="max sinkhorn iters")
 
-    parser.add_argument("--device", type=str, default="gpu", help="gpu or cpu")
+    parser.add_argument("--device", type=str, default="cuda", help="gpu or cpu")
 
     parser.add_argument('--num_emb_list', type=int, nargs='+', default=[256,256,256,256], help='emb num of every vq')
     parser.add_argument('--e_dim', type=int, default=32, help='vq codebook embedding size')
