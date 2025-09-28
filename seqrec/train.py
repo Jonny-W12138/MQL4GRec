@@ -10,8 +10,8 @@ from model import SASRec
 from utils import set_seed, hr_at_k, ndcg_at_k, compute_rank
 import os
 
-# wandb_api = os.getenv("WANDB_API_KEY")
-wandb.login(key='66ed323dc86428c2d90bf83475126ff997be35b6')
+wandb_api = os.getenv("WANDB_API_KEY")
+wandb.login(key=wandb_api)
 
 def train_epoch(model: SASRec, loader: DataLoader, device: torch.device, optimizer: optim.Optimizer, n_items: int, mm_text_all=None, mm_img_all=None):
     model.train()
