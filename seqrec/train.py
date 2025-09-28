@@ -10,36 +10,71 @@ from model import SASRec
 from utils import set_seed, hr_at_k, ndcg_at_k, compute_rank
 import os
 
-wandb_api = os.getenv("WANDB_API_KEY")
+import os
+
+wandb_api = os.getenv("WANDB_API_KEY", default='')
 wandb.login(key=wandb_api)
 
 def train_epoch(model: SASRec, loader: DataLoader, device: torch.device, optimizer: optim.Optimizer, n_items: int, mm_text_all=None, mm_img_all=None):
     model.train()
     total_loss = 0.0
 
-    all_item_emb = model.get_all_item_embeddings()  # [N, D]
     all_text_proj = mm_text_all
     all_img_proj = mm_img_all
 
     pbar = tqdm(loader, desc="Train")
+    ce = nn.CrossEntropyLoss()
     for batch in pbar:
         seq_items = batch["seq_items"].to(device)       # [B, L]
         attn_mask = batch["attn_mask"].to(device)       # [B, L]
-        target = batch["target"].to(device)             # [B]
+        pos_items = batch["pos_items"].to(device)       # [B, L]
+        neg_items = batch["neg_items"].to(device)       # [B, L]
+        valid_mask = batch["valid_pos_mask"].to(device) # [B, L]
         seq_text = batch["seq_text"].to(device) if batch["seq_text"] is not None else None
         seq_image = batch["seq_image"].to(device) if batch["seq_image"] is not None else None
 
+        # 编码整个序列
         h = model(seq_items, seq_text, seq_image, attn_mask)  # [B, L, D]
-        # last non-padding position
-        last_idx = (seq_items != 0).sum(dim=1) - 1  # [B]
-        h_last = h[torch.arange(h.size(0), device=device), last_idx]  # [B, D]
 
-        logits = model.predict_next(h_last, all_item_emb, all_text_proj, all_img_proj)  # [B, N]
-        loss = nn.CrossEntropyLoss()(logits, target)
+        # 收集所有有效位置的查询向量与正样本
+        idxs = valid_mask.nonzero(as_tuple=False)  # [M, 2] (b, t)
+        if idxs.numel() == 0:
+            continue
+        queries = h[idxs[:,0], idxs[:,1]]  # [M, D]
+        pos_flat = pos_items[idxs[:,0], idxs[:,1]]  # [M]
+        neg_flat = neg_items[idxs[:,0], idxs[:,1]]  # [M]
+
+        # 构建候选集合：batch 内所有正样本 + 所有负样本，去重
+        candidates = torch.unique(torch.cat([pos_items[valid_mask], neg_items[valid_mask]], dim=0))
+        # 去除可能的 0
+        candidates = candidates[candidates != 0]
+        if candidates.numel() == 0:
+            # fallback：使用正样本集合
+            candidates = torch.unique(pos_flat)
+
+        # 预融合候选嵌入
+        fused_cands = model.fuse_items(candidates, all_text_proj, all_img_proj)  # [K, D]
+
+        # 将正样本映射到候选索引
+        # 为了快速查找，构造字典映射
+        # 注意：使用张量操作生成查找表
+        # candidate_ids -> [K]
+        # 对于每个 pos_flat，找到其在 candidates 中的位置
+        # 构造映射：id -> index
+        # 简单实现：为每个 pos 进行匹配
+        # 为效率，可以使用广播比较：
+        match = (pos_flat.unsqueeze(1) == candidates.unsqueeze(0))  # [M, K]
+        target_idx = match.float().argmax(dim=1)  # 若不存在匹配，argmax返回0位置，但我们确保pos在candidates中
+
+        # 计算 InfoNCE 损失（CrossEntropy over candidates）
+        logits = queries @ fused_cands.t()  # [M, K]
+        loss = ce(logits, target_idx)
+
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        total_loss += loss.item()
+
+        total_loss += float(loss.item())
         pbar.set_postfix(loss=float(loss.item()))
         wandb.log({"train_step_loss": float(loss.item())})
 
@@ -187,7 +222,7 @@ def main():
     optimizer = optim.AdamW(model.parameters(), lr=1e-3)
 
     # 初始化 Weights & Biases
-    wandb.init(project="seqrec", config=vars(args), mode="online")
+    wandb.init(project="seqrec", config=vars(args), mode="offline")
     wandb.watch(model, log="all", log_freq=100)
 
     best_ndcg = -1.0

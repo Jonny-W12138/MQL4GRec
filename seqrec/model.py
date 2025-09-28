@@ -170,3 +170,33 @@ class SASRec(nn.Module):
         text_proj = self.text_proj(text_feats) if (self.use_text and text_feats is not None) else None
         image_proj = self.image_proj(image_feats) if (self.use_image and image_feats is not None) else None
         return text_proj, image_proj
+
+    def fuse_items(self, item_ids: torch.Tensor, text_proj_all: torch.Tensor = None, image_proj_all: torch.Tensor = None):
+        """
+        item_ids: [K] candidate item ids
+        Returns fused embeddings [K, D] for given items using current fusion strategy.
+        """
+        item_vec = self.item_emb(item_ids)
+        text_vec = text_proj_all[item_ids] if (self.use_text and text_proj_all is not None) else None
+        image_vec = image_proj_all[item_ids] if (self.use_image and image_proj_all is not None) else None
+        if self.fusion == "sum":
+            fused = item_vec.clone()
+            if text_vec is not None:
+                fused = fused + text_vec
+            if image_vec is not None:
+                fused = fused + image_vec
+            return fused
+        else:
+            parts = [item_vec]
+            if text_vec is not None:
+                parts.append(text_vec)
+            if image_vec is not None:
+                parts.append(image_vec)
+            cat = torch.cat(parts, dim=-1)
+            g = self.gate(cat)
+            fused = item_vec
+            if text_vec is not None:
+                fused = fused + g * text_vec
+            if image_vec is not None:
+                fused = fused + g * image_vec
+            return fused

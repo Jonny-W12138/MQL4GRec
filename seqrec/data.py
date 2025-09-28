@@ -95,10 +95,49 @@ class SeqDataset(Dataset):
         return text_vec, image_vec
 
     def __getitem__(self, idx):
-        user_id, seq, target = self.rows[idx]
-        seq_padded = self._pad_seq(seq)
-        seq_items = torch.tensor(seq_padded, dtype=torch.long)
+        user_id, seq, _ = self.rows[idx]
+        # 序列移位：输入序列去掉最后一个物品，正样本为原序列的后一个物品
+        if len(seq) == 0:
+            seq_in = []
+            pos = []
+        else:
+            seq_in = seq[:-1]
+            pos = seq[1:]
+        # pad 到 max_len
+        if len(seq_in) >= self.max_len:
+            seq_in = seq_in[-self.max_len:]
+            pos = pos[-self.max_len:]
+        else:
+            pad_len = self.max_len - len(seq_in)
+            seq_in = [0] * pad_len + seq_in
+            pos = [0] * pad_len + pos
+
+        seq_items = torch.tensor(seq_in, dtype=torch.long)
         attn_mask = (seq_items == 0)
+        pos_items = torch.tensor(pos, dtype=torch.long)
+        # 有效位置：seq_in 不为 0 且 pos 不为 0
+        valid_pos_mask = (~attn_mask) & (pos_items != 0)
+
+        # 采样每个位置一个全局负样本（不在用户当前序列集合，且不等于对应正样本）
+        user_hist_set = set(seq)  # 原始序列
+        neg = []
+        for p in pos:
+            if p == 0:
+                neg.append(0)
+                continue
+            # 采样直到命中合法负样本
+            tries = 0
+            while True:
+                nid = torch.randint(low=1, high=self.n_items, size=(1,)).item()
+                if nid not in user_hist_set and nid != p:
+                    neg.append(nid)
+                    break
+                tries += 1
+                if tries > 1000:
+                    # fallback
+                    neg.append(0)
+                    break
+        neg_items = torch.tensor(neg, dtype=torch.long)
 
         # Build modality tensors [L, mm_dim]
         text_feats = None
@@ -106,12 +145,10 @@ class SeqDataset(Dataset):
         if self.text_recon is not None or self.image_recon is not None:
             text_list = []
             image_list = []
-            for itm in seq_padded:
+            for itm in seq_in:
                 tvec, ivec = self._get_mm(itm)
                 text_list.append(tvec.cpu() if tvec is not None else None)
                 image_list.append(ivec.cpu() if ivec is not None else None)
-
-            # find dim from reconstructor
             if self.text_recon is not None:
                 td = self.text_recon.emb_dim
                 text_feats = torch.stack(
@@ -126,7 +163,9 @@ class SeqDataset(Dataset):
         return {
             "seq_items": seq_items,
             "attn_mask": attn_mask,
-            "target": torch.tensor(target, dtype=torch.long),
+            "pos_items": pos_items,
+            "neg_items": neg_items,
+            "valid_pos_mask": valid_pos_mask,
             "seq_text": text_feats,
             "seq_image": image_feats,
         }
