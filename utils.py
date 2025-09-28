@@ -7,8 +7,7 @@ import datetime
 import numpy as np
 import torch
 from torch.utils.data import ConcatDataset
-from data import SeqRecDataset, FusionSeqRecDataset, ItemImageDataset, ItemImageDelDataset, FusionSeqRecDelDataset, SeqRecImageDelDataset, \
-    FGImageDataset, FGFusionSeqRecDataset
+from data import SeqRecDataset, FusionSeqRecDataset, ItemImageDataset
 
 def parse_global_args(parser):
 
@@ -16,36 +15,36 @@ def parse_global_args(parser):
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--base_model", type=str, default="./config/ckpt",help="basic model path")
     
-    parser.add_argument("--load_model_name", type=str, default=None,help="load pretrained model")
+    # parser.add_argument("--load_model_name", type=str, default=None,help="load pretrained model")
 
-    parser.add_argument("--output_dir", type=str,
-                        default="./log",
-                        help="The output directory")
+    # parser.add_argument("--output_dir", type=str,
+    #                     default="./log",
+    #                     help="The output directory")
     return parser
 
 def parse_dataset_args(parser):
-    parser.add_argument("--data_path", type=str, default="",
-                        help="data directory")
-    parser.add_argument("--tasks", type=str, default="seqrec",
-                        help="Downstream tasks, separate by comma")
-    parser.add_argument('--pretrain_datasets', type=str, default="", 
-                            help=[])
-    parser.add_argument("--dataset", type=str, default="Instruments", help="Dataset name")
-    parser.add_argument("--index_file", type=str, default=".index.json", help="the item indices file")
-    parser.add_argument("--image_index_file", type=str, default=".index.json", help="the item indices file")
+    # parser.add_argument("--data_path", type=str, default="",
+    #                     help="data directory")
+    # parser.add_argument("--tasks", type=str, default="seqrec",
+    #                     help="Downstream tasks, separate by comma")
+    # parser.add_argument('--pretrain_datasets', type=str, default="", 
+    #                         help=[])
+    # parser.add_argument("--dataset", type=str, default="Instruments", help="Dataset name")
+    # parser.add_argument("--index_file", type=str, default=".index.json", help="the item indices file")
+    # parser.add_argument("--image_index_file", type=str, default=".index.json", help="the item indices file")
     parser.add_argument("--fg_image_index_file", type=str, default=".index.json", help="the item indices file")
     
-    parser.add_argument("--prompt_num", type=int, default=4,
-                            help="soft prompt num")
+    # parser.add_argument("--prompt_num", type=int, default=4,
+    #                         help="soft prompt num")
     
     parser.add_argument("--code_num", type=int, default=256,
                             help="code num")
 
     # arguments related to sequential task
-    parser.add_argument("--max_his_len", type=int, default=20,
-                        help="the max number of items in history sequence, -1 means no limit")
-    parser.add_argument("--train_data_mode", type=int, default=0,
-                        help="0, 1")
+    # parser.add_argument("--max_his_len", type=int, default=20,
+                        # help="the max number of items in history sequence, -1 means no limit")
+    # parser.add_argument("--train_data_mode", type=int, default=0,
+    #                     help="0, 1")
 
     parser.add_argument("--his_sep", type=str, default=", ", help="The separator used for history")
     parser.add_argument("--only_train_response", action="store_true", default=False,
@@ -79,28 +78,28 @@ def parse_dataset_args(parser):
 def parse_train_args(parser):
     
     parser.add_argument("--optim", type=str, default="adamw_torch", help='The name of the optimizer')
-    parser.add_argument("--epochs", type=int, default=4)
-    parser.add_argument("--learning_rate", type=float, default=2e-5)
-    parser.add_argument("--per_device_batch_size", type=int, default=8)
+    # parser.add_argument("--epochs", type=int, default=4)
+    # parser.add_argument("--learning_rate", type=float, default=2e-5)
+    # parser.add_argument("--per_device_batch_size", type=int, default=8)
     parser.add_argument("--gradient_accumulation_steps", type=int, default=2)
-    parser.add_argument("--logging_step", type=int, default=10)
+    # parser.add_argument("--logging_step", type=int, default=10)
     parser.add_argument("--model_max_length", type=int, default=2048)
-    parser.add_argument("--weight_decay", type=float, default=0.01)
+    # parser.add_argument("--weight_decay", type=float, default=0.01)
 
     parser.add_argument("--resume_from_checkpoint", type=str, default=None, help="either training checkpoint or final adapter")
 
     parser.add_argument("--warmup_ratio", type=float, default=0.01)
     parser.add_argument("--lr_scheduler_type", type=str, default="cosine")
-    parser.add_argument("--save_and_eval_strategy", type=str, default="epoch")
+    # parser.add_argument("--save_and_eval_strategy", type=str, default="epoch")
     parser.add_argument("--save_and_eval_steps", type=int, default=1000)
     parser.add_argument("--fp16",  action="store_true", default=False)
     parser.add_argument("--bf16", action="store_true", default=False)
     parser.add_argument("--gradient_checkpointing", action="store_true", default=False)
     parser.add_argument("--deepspeed", type=str, default="./config/ds_z3_bf16.json")
-    parser.add_argument("--patient", type=int, default=10)
+    # parser.add_argument("--patient", type=int, default=10)
     parser.add_argument("--eval_num_beams", type=int, default=5)
     
-    parser.add_argument("--valid_task", type=str, default="SeqRec")
+    # parser.add_argument("--valid_task", type=str, default="SeqRec")
 
     return parser
 
@@ -184,20 +183,20 @@ def load_datasets(args):
         elif task.lower() == "seqitem2image" or task.lower() == "seqimage2item" or task.lower() == "fusionseqrec":
             dataset = FusionSeqRecDataset(args, task=task.lower(), mode="train", prompt_sample_num=prompt_sample_num, sample_num=data_sample_num)
             
-        elif task == 'fgfusionseqrec':
-            dataset = FGFusionSeqRecDataset(args, task=task.lower(), mode="train", prompt_sample_num=prompt_sample_num, sample_num=data_sample_num)
+        # elif task == 'fgfusionseqrec':
+        #     dataset = FGFusionSeqRecDataset(args, task=task.lower(), mode="train", prompt_sample_num=prompt_sample_num, sample_num=data_sample_num)
         
-        elif task.lower() in ['item2fgimage', 'fgimage2item', 'fgimage2image', 'image2fgimage']:
-            dataset = FGImageDataset(args, task=task.lower(), prompt_sample_num=prompt_sample_num, sample_num=data_sample_num)
+        # elif task.lower() in ['item2fgimage', 'fgimage2item', 'fgimage2image', 'image2fgimage']:
+            # dataset = FGImageDataset(args, task=task.lower(), prompt_sample_num=prompt_sample_num, sample_num=data_sample_num)
             
-        elif task.lower() == "item2imagedel" or task.lower() == "image2itemdel":
-            dataset = ItemImageDelDataset(args, task=task.lower(), prompt_sample_num=prompt_sample_num, sample_num=data_sample_num)
+        # elif task.lower() == "item2imagedel" or task.lower() == "image2itemdel":
+            # dataset = ItemImageDelDataset(args, task=task.lower(), prompt_sample_num=prompt_sample_num, sample_num=data_sample_num)
             
-        elif task.lower() == "seqimagedel":
-            dataset = SeqRecImageDelDataset(args, task=task.lower(), mode="train", prompt_sample_num=prompt_sample_num, sample_num=data_sample_num)
+        # elif task.lower() == "seqimagedel":
+            # dataset = SeqRecImageDelDataset(args, task=task.lower(), mode="train", prompt_sample_num=prompt_sample_num, sample_num=data_sample_num)
 
-        elif task.lower() == "seqitem2imagedel" or task.lower() == "seqimage2itemdel" or task.lower() == "fusionseqrecdel":
-            dataset = FusionSeqRecDelDataset(args, task=task.lower(), mode="train", prompt_sample_num=prompt_sample_num, sample_num=data_sample_num)
+        # elif task.lower() == "seqitem2imagedel" or task.lower() == "seqimage2itemdel" or task.lower() == "fusionseqrecdel":
+            # dataset = FusionSeqRecDelDataset(args, task=task.lower(), mode="train", prompt_sample_num=prompt_sample_num, sample_num=data_sample_num)
 
         else:
             raise NotImplementedError

@@ -144,6 +144,23 @@ def train(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='LLMRec')
+
+    parser.add_argument('--data_path', type=str, default='./data/')
+    parser.add_argument('--pretrain_datasets', type=str, default='Instruments')
+    parser.add_argument('--output_dir', type=str, default='./log/Instruments/ckpt_b1024_lr1e-3_seqrec,seqimage/pretrain')
+    parser.add_argument('--per_device_batch_size', type=int, default=1024)
+    parser.add_argument('--learning_rate', type=float, default=1e-3)
+    parser.add_argument('--epochs', type=int, default=30)
+    parser.add_argument('--weight_decay', type=float, default=0.01)
+    parser.add_argument('--save_and_eval_strategy', type=str, default='epoch')
+    parser.add_argument('--logging_step', type=int, default=50)
+    parser.add_argument('--train_data_mode', type=int, default=0)
+    parser.add_argument('--max_his_len', type=int, default=20)
+    parser.add_argument('--index_file', type=str, default='.index_lemb.json')
+    parser.add_argument('--image_index_file', type=str, default='.index_vitemb.json')
+    parser.add_argument('--tasks', type=str, default='seqrec,seqimage')
+    parser.add_argument('--valid_task', type=str, default='seqrec')
+
     parser = parse_global_args(parser)
     parser = parse_train_args(parser)
     parser = parse_dataset_args(parser)

@@ -19,12 +19,13 @@ import os
 def parse_args():
     parser = argparse.ArgumentParser(description="Index")
     
-    parser.add_argument('--dataset', type=str, default=None)
-    parser.add_argument('--ckpt_path', type=str, default=None)
-    parser.add_argument('--output_dir', type=str, default=None)
-    parser.add_argument('--output_file', type=str, default=None)
+    parser.add_argument('--dataset', type=str, default="Instruments")
+    parser.add_argument('--ckpt_path', type=str, default="log/Instruments/ViT-L-14_256/best_collision_model.pth")
+    parser.add_argument('--data_path', type=str, default="data/Instruments/Instruments.emb-ViT-L-14.npy")
+    parser.add_argument('--output_dir', type=str, default="data/Instruments_new")
+    parser.add_argument('--output_file', type=str, default="Instruments_new.index_vitmb.json")
     parser.add_argument('--content', type=str, default=None)
-    parser.add_argument('--device', type=str, default="cuda:0")
+    parser.add_argument('--device', type=str, default="mps")
 
     return parser.parse_args()
 
@@ -68,11 +69,13 @@ if args.content == 'image':
 else:
     prefix = ["<a_{}>","<b_{}>","<c_{}>","<d_{}>","<e_{}>"]
 
-ckpt = torch.load(ckpt_path, map_location=torch.device('cpu'))
+ckpt = torch.load(ckpt_path, map_location=torch.device('cpu'), weights_only=False)
+
+data = EmbDataset(args.data_path)
+
 args = ckpt["args"]
 state_dict = ckpt["state_dict"]
 
-data = EmbDataset(args.data_path)
 
 model = RQVAE(in_dim=data.dim,
                   num_emb_list=args.num_emb_list,
@@ -93,7 +96,7 @@ model = model.to(device)
 model.eval()
 print(model)
 
-data_loader = DataLoader(data,num_workers=args.num_workers,
+data_loader = DataLoader(data,num_workers=0,
                              batch_size=64, shuffle=False,
                              pin_memory=True)
 

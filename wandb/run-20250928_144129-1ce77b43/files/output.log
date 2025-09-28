@@ -1,0 +1,2 @@
+  0%|                                                                                                          | 0/16600 [00:00<?, ?it/s]/opt/homebrew/Caskroom/miniconda/base/envs/rqvae/lib/python3.10/site-packages/torch/utils/data/dataloader.py:683: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, then device pinned memory won't be used.
+  warnings.warn(warn_msg)

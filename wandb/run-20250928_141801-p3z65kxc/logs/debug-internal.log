@@ -1,0 +1,8 @@
+{"time":"2025-09-28T14:18:01.623788+08:00","level":"INFO","msg":"using version","core version":"0.19.0"}
+{"time":"2025-09-28T14:18:01.623834+08:00","level":"INFO","msg":"created symlink","path":"/Users/jonnyw/Documents/personal/internship/recommender-system/MQL4GRec/wandb/run-20250928_141801-p3z65kxc/logs/debug-core.log"}
+{"time":"2025-09-28T14:18:01.734637+08:00","level":"INFO","msg":"created new stream","id":"p3z65kxc"}
+{"time":"2025-09-28T14:18:01.735072+08:00","level":"INFO","msg":"stream: started","id":"p3z65kxc"}
+{"time":"2025-09-28T14:18:01.73517+08:00","level":"INFO","msg":"sender: started","stream_id":"p3z65kxc"}
+{"time":"2025-09-28T14:18:01.735173+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"p3z65kxc"}
+{"time":"2025-09-28T14:18:01.735149+08:00","level":"INFO","msg":"handler: started","stream_id":"p3z65kxc"}
+{"time":"2025-09-28T14:18:02.218507+08:00","level":"INFO","msg":"Starting system monitor"}
