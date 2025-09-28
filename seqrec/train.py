@@ -41,6 +41,7 @@ def train_epoch(model: SASRec, loader: DataLoader, device: torch.device, optimiz
         optimizer.step()
         total_loss += loss.item()
         pbar.set_postfix(loss=float(loss.item()))
+        wandb.log({"train_step_loss": float(loss.item())})
 
     return total_loss / max(1, len(loader))
 
