@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+import wandb
 from data import prepare_datasets, collate_fn
 from model import SASRec
 from utils import set_seed, hr_at_k, ndcg_at_k, compute_rank
@@ -42,7 +43,7 @@ def train_epoch(model: SASRec, loader: DataLoader, device: torch.device, optimiz
 
 
 @torch.no_grad()
-def eval_epoch(model: SASRec, loader: DataLoader, device: torch.device, k: int = 10, mm_text_all=None, mm_img_all=None):
+def eval_epoch(model: SASRec, loader: DataLoader, device: torch.device, mm_text_all=None, mm_img_all=None):
     model.eval()
     ranks_all = []
 
@@ -73,9 +74,12 @@ def eval_epoch(model: SASRec, loader: DataLoader, device: torch.device, k: int =
         ranks = compute_rank(logits, target)
         ranks_all.extend(ranks)
 
-    hr = hr_at_k(ranks_all, k)
-    ndcg = ndcg_at_k(ranks_all, k)
-    return hr, ndcg
+    hr1 = hr_at_k(ranks_all, 1)
+    hr5 = hr_at_k(ranks_all, 5)
+    hr10 = hr_at_k(ranks_all, 10)
+    ndcg5 = ndcg_at_k(ranks_all, 5)
+    ndcg10 = ndcg_at_k(ranks_all, 10)
+    return hr1, hr5, hr10, ndcg5, ndcg10
 
 
 def main():
@@ -93,8 +97,8 @@ def main():
     parser.add_argument("--max_len", type=int, default=20)
     parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--fusion", type=str, default="gated_sum", choices=["sum", "gated_sum"])
-    parser.add_argument("--epochs", type=int, default=5)
-    parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--epochs", type=int, default=2000)
+    parser.add_argument("--batch_size", type=int, default=128)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--mm_dim", type=int, default=256)
     args = parser.parse_args()
@@ -176,15 +180,60 @@ def main():
 
     print(f"Items: {n_items}, Train: {len(train_ds)}, Valid: {len(valid_ds)}, Test: {len(test_ds)}")
     # 创建优化器（仅创建一次，跨epoch保持状态）
-    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    optimizer = optim.AdamW(model.parameters(), lr=1e-3)
+
+    # 初始化 Weights & Biases
+    wandb.init(project="seqrec", config=vars(args), mode="online")
+    wandb.watch(model, log="all", log_freq=100)
+
+    best_ndcg = -1.0
+    best_hr = -1.0
+    patience = 20
+    no_improve = 0
 
     for ep in range(1, args.epochs + 1):
         loss = train_epoch(model, train_loader, device, optimizer, n_items, mm_text_all, mm_img_all)
-        hr_v, ndcg_v = eval_epoch(model, valid_loader, device, 10, mm_text_all, mm_img_all)
-        print(f"Epoch {ep}: loss={loss:.4f} | Valid HR@10={hr_v:.4f} NDCG@10={ndcg_v:.4f}")
+        hr1_v, hr5_v, hr10_v, ndcg5_v, ndcg10_v = eval_epoch(model, valid_loader, device, mm_text_all, mm_img_all)
 
-    hr_t, ndcg_t = eval_epoch(model, test_loader, device, 10, mm_text_all, mm_img_all)
-    print(f"Test HR@10={hr_t:.4f} NDCG@10={ndcg_t:.4f}")
+        # 记录到 wandb
+        wandb.log({
+            "epoch": ep,
+            "train_loss": float(loss),
+            "valid_hr@1": float(hr1_v),
+            "valid_hr@5": float(hr5_v),
+            "valid_hr@10": float(hr10_v),
+            "valid_ndcg@5": float(ndcg5_v),
+            "valid_ndcg@10": float(ndcg10_v),
+        })
+
+        print(f"Epoch {ep}: loss={loss:.4f} | Valid HR@1={hr1_v:.4f} HR@5={hr5_v:.4f} HR@10={hr10_v:.4f} NDCG@5={ndcg5_v:.4f} NDCG@10={ndcg10_v:.4f}")
+
+        improved = False
+        if ndcg10_v > best_ndcg:
+            best_ndcg = ndcg10_v
+            improved = True
+        if hr10_v > best_hr:
+            best_hr = hr10_v
+            improved = True
+
+        if improved:
+            no_improve = 0
+        else:
+            no_improve += 1
+            if no_improve >= patience:
+                print(f"Early stopping triggered: no improvement for {patience} consecutive epochs.")
+                break
+
+    hr1_t, hr5_t, hr10_t, ndcg5_t, ndcg10_t = eval_epoch(model, test_loader, device, mm_text_all, mm_img_all)
+    wandb.log({
+        "test_hr@1": float(hr1_t),
+        "test_hr@5": float(hr5_t),
+        "test_hr@10": float(hr10_t),
+        "test_ndcg@5": float(ndcg5_t),
+        "test_ndcg@10": float(ndcg10_t),
+    })
+    print(f"Test HR@1={hr1_t:.4f} HR@5={hr5_t:.4f} HR@10={hr10_t:.4f} NDCG@5={ndcg5_t:.4f} NDCG@10={ndcg10_t:.4f}")
+    wandb.finish()
 
 
 if __name__ == "__main__":

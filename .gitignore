@@ -7,5 +7,7 @@ pretrain_ckpt/*
 result/*
 log
 ./log
+wandb
+./wandb
 
 datasets/amazon18/*
