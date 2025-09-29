@@ -238,7 +238,7 @@ def main():
                 "test_ndcg@5": float(ndcg5_t),
                 "test_ndcg@10": float(ndcg10_t),
             })
-        print(f"Test HR@1={hr1_t:.4f} HR@5={hr5_t:.4f} HR@10={hr10_t:.4f} NDCG@5={ndcg5_t:.4f} NDCG@10={ndcg10_t:.4f}")
+            print(f"Test HR@1={hr1_t:.4f} HR@5={hr5_t:.4f} HR@10={hr10_t:.4f} NDCG@5={ndcg5_t:.4f} NDCG@10={ndcg10_t:.4f}")
     wandb.finish()
 
 
