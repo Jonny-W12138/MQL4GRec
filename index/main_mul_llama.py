@@ -90,7 +90,7 @@ if __name__ == '__main__':
     print(model)
     data_loader = DataLoader(data,num_workers=args.num_workers,
                              batch_size=args.batch_size, shuffle=True,
-                             pin_memory=True)
+                             pin_memory=True, persistent_workers=True)
     trainer = Trainer(args,model)
     best_loss, best_collision_rate = trainer.fit(data_loader)
 
