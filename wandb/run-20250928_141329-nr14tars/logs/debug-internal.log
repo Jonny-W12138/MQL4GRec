@@ -1,8 +1,0 @@
-{"time":"2025-09-28T14:13:29.786918+08:00","level":"INFO","msg":"using version","core version":"0.19.0"}
-{"time":"2025-09-28T14:13:29.786969+08:00","level":"INFO","msg":"created symlink","path":"/Users/jonnyw/Documents/personal/internship/recommender-system/MQL4GRec/wandb/run-20250928_141329-nr14tars/logs/debug-core.log"}
-{"time":"2025-09-28T14:13:29.901276+08:00","level":"INFO","msg":"created new stream","id":"nr14tars"}
-{"time":"2025-09-28T14:13:29.901885+08:00","level":"INFO","msg":"handler: started","stream_id":"nr14tars"}
-{"time":"2025-09-28T14:13:29.902038+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"nr14tars"}
-{"time":"2025-09-28T14:13:29.902044+08:00","level":"INFO","msg":"sender: started","stream_id":"nr14tars"}
-{"time":"2025-09-28T14:13:29.902158+08:00","level":"INFO","msg":"stream: started","id":"nr14tars"}
-{"time":"2025-09-28T14:13:30.607542+08:00","level":"INFO","msg":"Starting system monitor"}
