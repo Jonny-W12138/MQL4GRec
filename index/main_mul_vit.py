@@ -17,7 +17,7 @@ def parse_args():
 
     parser.add_argument('--lr', type=float, default=1e-3, help='learning rate')
     parser.add_argument('--epochs', type=int, default=500, help='number of epochs')
-    parser.add_argument('--batch_size', type=int, default=8196, help='batch size')
+    parser.add_argument('--batch_size', type=int, default=2048, help='batch size')
     parser.add_argument('--num_workers', type=int, default=16, )
     parser.add_argument('--eval_step', type=int, default=2, help='eval step')
     parser.add_argument('--learner', type=str, default="AdamW", help='optimizer')
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     print(model)
     data_loader = DataLoader(data,num_workers=args.num_workers,
                              batch_size=args.batch_size, shuffle=True,
-                             pin_memory=True)
+                             pin_memory=True, persistent_workers=True)
     trainer = Trainer(args,model)
     best_loss, best_collision_rate = trainer.fit(data_loader)
 
