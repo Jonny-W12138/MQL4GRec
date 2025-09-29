@@ -17,7 +17,7 @@ def parse_args():
 
     parser.add_argument('--lr', type=float, default=1e-3, help='learning rate')
     parser.add_argument('--epochs', type=int, default=500, help='number of epochs')
-    parser.add_argument('--batch_size', type=int, default=8192, help='batch size') # 2048
+    parser.add_argument('--batch_size', type=int, default=2048, help='batch size') # 2048
     parser.add_argument('--num_workers', type=int, default=16, )
     parser.add_argument('--eval_step', type=int, default=2, help='eval step')
     parser.add_argument('--learner', type=str, default="AdamW", help='optimizer')
