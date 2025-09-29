@@ -12,6 +12,13 @@ from datasets import EmbDataset, EmbDatasetAll
 from models.rqvae import RQVAE
 from trainer import  Trainer
 
+try:
+    import wandb
+    WANDB_AVAILABLE = True
+except ImportError:
+    WANDB_AVAILABLE = False
+    print("Warning: wandb not available. Install with 'pip install wandb' to enable logging.")
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Index")
 
@@ -45,6 +52,11 @@ def parse_args():
     parser.add_argument('--layers', type=int, nargs='+', default=[2048,1024,512,256,128,64], help='hidden sizes of every layer')
 
     parser.add_argument("--ckpt_dir", type=str, default=f"log/{dataset_name}/{dataset_name}_llama_256", help="output directory for model")
+    
+    # wandb参数
+    parser.add_argument("--use_wandb", action="store_true", help="use wandb for logging")
+    parser.add_argument("--wandb_project", type=str, default="MQL4GRec", help="wandb project name")
+    parser.add_argument("--wandb_run_name", type=str, default=None, help="wandb run name")
 
     return parser.parse_args()
 
@@ -63,6 +75,25 @@ if __name__ == '__main__':
     print(args)
 
     logging.basicConfig(level=logging.DEBUG)
+    
+    # 初始化wandb
+    if args.use_wandb:
+        if not WANDB_AVAILABLE:
+            print("Error: wandb is not available but --use_wandb is set. Please install wandb.")
+            exit(1)
+        
+        # 设置运行名称
+        run_name = args.wandb_run_name
+        if run_name is None:
+            run_name = f"llama_{args.datasets}_{args.batch_size}_{args.lr}"
+        
+        wandb.init(
+            project=args.wandb_project,
+            name=run_name,
+            config=vars(args),
+            tags=["llama", args.datasets]
+        )
+        print(f"Initialized wandb project: {args.wandb_project}, run: {run_name}")
 
     # """build dataset"""
     # train_datasets = []
@@ -96,4 +127,12 @@ if __name__ == '__main__':
 
     print("Best Loss",best_loss)
     print("Best Collision Rate", best_collision_rate)
+    
+    # 记录最终结果到wandb
+    if args.use_wandb:
+        wandb.log({
+            "final/best_loss": best_loss,
+            "final/best_collision_rate": best_collision_rate
+        })
+        wandb.finish()
 
