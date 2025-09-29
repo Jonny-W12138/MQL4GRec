@@ -123,15 +123,23 @@ class Trainer(object):
         # indices_set = set()
         indices_list = []
         num_sample = 0
+        # 用于统计每个码本层的使用情况
+        codebook_usage = [set() for _ in range(len(self.args.num_emb_list))]
+        
         for batch_idx, data in enumerate(iter_data):
             num_sample += len(data)
             data = data.to(self.device)
             indices, distances = self.model.get_indices(data)
             indices = indices.view(-1,indices.shape[-1]).cpu().numpy()
+            
+            # 统计每个码本层的使用情况
             for index in indices:
                 code = "-".join([str(int(_)) for _ in index])
-                # indices_set.add(code)
                 indices_list.append(code)
+                
+                # 记录每个码本层使用的索引
+                for layer_idx, idx in enumerate(index):
+                    codebook_usage[layer_idx].add(int(idx))
         
         freq_count = defaultdict(int)      
         for c in indices_list:
@@ -141,8 +149,20 @@ class Trainer(object):
 
         indices_set = set(indices_list)
         collision_rate = (num_sample - len(indices_set))/num_sample
+        
+        # 计算码本利用率
+        codebook_utilization = []
+        total_utilization = 0
+        for layer_idx, used_indices in enumerate(codebook_usage):
+            total_codes = self.args.num_emb_list[layer_idx]
+            used_codes = len(used_indices)
+            utilization = used_codes / total_codes
+            codebook_utilization.append(utilization)
+            total_utilization += utilization
+        
+        avg_utilization = total_utilization / len(codebook_utilization)
 
-        return max_value, min_value, collision_rate
+        return max_value, min_value, collision_rate, codebook_utilization, avg_utilization
 
     def _save_checkpoint(self, epoch, collision_rate=1, ckpt_file=None):
 
@@ -207,7 +227,7 @@ class Trainer(object):
             # eval
             if (epoch_idx + 1) % self.eval_step == 0:
                 valid_start_time = time()
-                max_value, min_value, collision_rate = self._valid_epoch(data)
+                max_value, min_value, collision_rate, codebook_utilization, avg_utilization = self._valid_epoch(data)
 
                 if collision_rate < self.best_collision_rate:
                     self.best_collision_rate = collision_rate
@@ -218,6 +238,7 @@ class Trainer(object):
                     cur_eval_step += 1
 
                 print(f'MAX: {max_value}, Min: {min_value}, collision_rate: {collision_rate}, best_collision_rate: {self.best_collision_rate}')
+                print(f'Codebook utilization: {[f"{u:.4f}" for u in codebook_utilization]}, Avg: {avg_utilization:.4f}')
 
                 valid_end_time = time()
                 valid_score_output = (
@@ -226,21 +247,30 @@ class Trainer(object):
                     + set_color("time", "blue")
                     + ": %.2fs, "
                     + set_color("collision_rate", "blue")
-                    + ": %f]"
-                ) % (epoch_idx, valid_end_time - valid_start_time, collision_rate)
+                    + ": %f, "
+                    + set_color("avg_utilization", "blue")
+                    + ": %.4f]"
+                ) % (epoch_idx, valid_end_time - valid_start_time, collision_rate, avg_utilization)
 
                 self.logger.info(valid_score_output)
                 
                 # 记录验证指标到wandb
                 if self.use_wandb and WANDB_AVAILABLE:
-                    wandb.log({
+                    wandb_log_dict = {
                         "epoch": epoch_idx,
                         "eval/max_frequency": max_value,
                         "eval/min_frequency": min_value,
                         "eval/collision_rate": collision_rate,
                         "eval/best_collision_rate": self.best_collision_rate,
+                        "eval/avg_codebook_utilization": avg_utilization,
                         "eval/validation_time": valid_end_time - valid_start_time
-                    })
+                    }
+                    
+                    # 记录每个码本层的利用率
+                    for i, util in enumerate(codebook_utilization):
+                        wandb_log_dict[f"eval/codebook_utilization_layer_{i}"] = util
+                    
+                    wandb.log(wandb_log_dict)
                 
                 # if epoch_idx > 1000:
                 # if epoch_idx % 10 == 0:
