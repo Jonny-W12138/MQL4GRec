@@ -6,8 +6,11 @@ checkpoints/*
 pretrain_ckpt/*
 result/*
 log
-./log
+./log/*
 wandb
-./wandb
+./wandb/*
+./data/*/*.npy
+data/*/*.npy
 
-datasets/amazon18/*
+datasets/*
+datasets/LC-Rec_image

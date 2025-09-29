@@ -24,7 +24,8 @@ def parse_args():
     parser.add_argument("--data_root", type=str,
                         default="data",
                         help="Input data path.")
-    parser.add_argument('--datasets', type=str, default='Instruments')
+    dataset_name = 'Sports'
+    parser.add_argument('--datasets', type=str, default=dataset_name)
     parser.add_argument('--embedding_file', type=str, default=".emb-ViT-L-14.npy", help='')
 
     parser.add_argument('--weight_decay', type=float, default=1e-4, help='l2 regularization weight')
@@ -43,7 +44,7 @@ def parse_args():
     parser.add_argument('--quant_loss_weight', type=float, default=1.0, help='vq quantion loss weight')
     parser.add_argument('--layers', type=int, nargs='+', default=[2048,1024,512,256,128,64], help='hidden sizes of every layer')
 
-    parser.add_argument("--ckpt_dir", type=str, default="log/Instruments/Instruments_ViT-L-14_256", help="output directory for model")
+    parser.add_argument("--ckpt_dir", type=str, default=f"log/{dataset_name}/{dataset_name}_ViT-L-14_256", help="output directory for model")
 
     return parser.parse_args()
 
