@@ -179,9 +179,9 @@ def main():
                 _, mm_img_all = model.project_modalities_all(image_feats=img_feats)
                 mm_img_all = mm_img_all.detach()
 
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn, num_workers=4 if device.type == "cuda" else 0, pin_memory=True)
-    valid_loader = DataLoader(valid_ds, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn, num_workers=4 if device.type == "cuda" else 0, pin_memory=True)
-    test_loader = DataLoader(test_ds, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn, num_workers=4 if device.type == "cuda" else 0, pin_memory=True)
+    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn)
+    valid_loader = DataLoader(valid_ds, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn)
+    test_loader = DataLoader(test_ds, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn)
 
     print(f"Items: {n_items}, Train: {len(train_ds)}, Valid: {len(valid_ds)}, Test: {len(test_ds)}")
     # 创建优化器（仅创建一次，跨epoch保持状态）
