@@ -19,11 +19,18 @@ import os
 def parse_args():
     parser = argparse.ArgumentParser(description="Index")
     
-    parser.add_argument('--dataset', type=str, default="Instruments")
-    parser.add_argument('--ckpt_path', type=str, default="log/Instruments/ViT-L-14_256/best_collision_model.pth")
-    parser.add_argument('--data_path', type=str, default="data/Instruments/Instruments.emb-ViT-L-14.npy")
-    parser.add_argument('--output_dir', type=str, default="data/Instruments_new")
-    parser.add_argument('--output_file', type=str, default="Instruments_new.index_vitmb.json")
+    dataset_name = 'Sports'
+    parser.add_argument('--dataset', type=str, default=dataset_name)
+    # parser.add_argument('--ckpt_path', type=str, default=f"log/{dataset_name}/{dataset_name}_ViT-L-14_256/best_collision_model.pth")
+    parser.add_argument('--ckpt_path', type=str, default=f"log/{dataset_name}/{dataset_name}_llama_256/best_collision_model.pth")
+
+    # parser.add_argument('--data_path', type=str, default=f"data/{dataset_name}/{dataset_name}.emb-ViT-L-14.npy")
+    parser.add_argument('--data_path', type=str, default=f"data/{dataset_name}/{dataset_name}.emb-llama-td.npy")
+
+    parser.add_argument('--output_dir', type=str, default=f"data/{dataset_name}")
+
+    # parser.add_argument('--output_file', type=str, default=f"{dataset_name}_new.index_vitemb.json")
+    parser.add_argument('--output_file', type=str, default=f"{dataset_name}_new.index_lemb.json")
     parser.add_argument('--content', type=str, default=None)
     parser.add_argument('--device', type=str, default="mps")
 

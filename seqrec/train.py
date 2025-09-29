@@ -88,13 +88,14 @@ def eval_epoch(model: SASRec, loader: DataLoader, device: torch.device, mm_text_
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--train", type=str, default='data/Instruments/Instruments.train.inter')
-    parser.add_argument("--valid", type=str, default='data/Instruments/Instruments.valid.inter')
-    parser.add_argument("--test", type=str, default='data/Instruments/Instruments.test.inter')
-    parser.add_argument("--lemb", type=str, default='data/Instruments_new/Instruments_new.index_lemb.json')
-    parser.add_argument("--vitmb", type=str, default='data/Instruments_new/Instruments_new.index_vitmb.json')
-    parser.add_argument("--text_ckpt", type=str, default='log/Instruments/llama_256/best_collision_model.pth')
-    parser.add_argument("--image_ckpt", type=str, default='log/Instruments/ViT-L-14_256/best_collision_model.pth')
+    dataset_name = 'Sports'
+    parser.add_argument("--train", type=str, default=f'data/{dataset_name}/{dataset_name}.train.inter')
+    parser.add_argument("--valid", type=str, default=f'data/{dataset_name}/{dataset_name}.valid.inter')
+    parser.add_argument("--test", type=str, default=f'data/{dataset_name}/{dataset_name}.test.inter')
+    parser.add_argument("--lemb", type=str, default=f'data/{dataset_name}/{dataset_name}.index_lemb.json')
+    parser.add_argument("--vitmb", type=str, default=f'data/{dataset_name}/{dataset_name}.index_vitemb.json')
+    parser.add_argument("--text_ckpt", type=str, default=f'log/{dataset_name}/{dataset_name}_llama_256/best_collision_model.pth')
+    parser.add_argument("--image_ckpt", type=str, default=f'log/{dataset_name}/{dataset_name}_ViT-L-14_256/best_collision_model.pth')
     parser.add_argument("--d_model", type=int, default=128)
     parser.add_argument("--n_heads", type=int, default=2)
     parser.add_argument("--n_layers", type=int, default=2)
