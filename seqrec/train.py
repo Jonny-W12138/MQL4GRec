@@ -228,15 +228,16 @@ def main():
             if no_improve >= patience:
                 print(f"Early stopping triggered: no improvement for {patience} consecutive epochs.")
                 break
-
-        hr1_t, hr5_t, hr10_t, ndcg5_t, ndcg10_t = eval_epoch(model, test_loader, device, mm_text_all, mm_img_all)
-        wandb.log({
-            "test_hr@1": float(hr1_t),
-            "test_hr@5": float(hr5_t),
-            "test_hr@10": float(hr10_t),
-            "test_ndcg@5": float(ndcg5_t),
-            "test_ndcg@10": float(ndcg10_t),
-        })
+        
+        if ep%3 == 0:
+            hr1_t, hr5_t, hr10_t, ndcg5_t, ndcg10_t = eval_epoch(model, test_loader, device, mm_text_all, mm_img_all)
+            wandb.log({
+                "test_hr@1": float(hr1_t),
+                "test_hr@5": float(hr5_t),
+                "test_hr@10": float(hr10_t),
+                "test_ndcg@5": float(ndcg5_t),
+                "test_ndcg@10": float(ndcg10_t),
+            })
         print(f"Test HR@1={hr1_t:.4f} HR@5={hr5_t:.4f} HR@10={hr10_t:.4f} NDCG@5={ndcg5_t:.4f} NDCG@10={ndcg10_t:.4f}")
     wandb.finish()
 
