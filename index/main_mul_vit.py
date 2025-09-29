@@ -54,7 +54,7 @@ def parse_args():
     parser.add_argument("--ckpt_dir", type=str, default=f"log/{dataset_name}/{dataset_name}_ViT-L-14_256", help="output directory for model")
     
     # wandb参数
-    parser.add_argument("--use_wandb", action="store_true", help="use wandb for logging")
+    parser.add_argument("--use_wandb", action="store_true", default=True, help="use wandb for logging")
     parser.add_argument("--wandb_project", type=str, default="MQL4GRec", help="wandb project name")
     parser.add_argument("--wandb_run_name", type=str, default=None, help="wandb run name")
 
