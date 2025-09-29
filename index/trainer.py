@@ -9,6 +9,12 @@ from collections import defaultdict
 from utils import ensure_dir,set_color,get_local_time
 import os
 
+try:
+    import wandb
+    WANDB_AVAILABLE = True
+except ImportError:
+    WANDB_AVAILABLE = False
+
 class Trainer(object):
 
     def __init__(self, args, model):
@@ -34,6 +40,9 @@ class Trainer(object):
         self.best_collision_ckpt = "best_collision_model.pth"
         self.optimizer = self._build_optimizer()
         self.model = self.model.to(self.device)
+        
+        # wandb设置
+        self.use_wandb = getattr(args, 'use_wandb', False)
 
     def _build_optimizer(self):
 
@@ -180,6 +189,16 @@ class Trainer(object):
                 epoch_idx, training_start_time, training_end_time, train_loss, train_recon_loss
             )
             self.logger.info(train_loss_output)
+            
+            # 记录训练指标到wandb
+            if self.use_wandb and WANDB_AVAILABLE:
+                wandb.log({
+                    "epoch": epoch_idx,
+                    "train/total_loss": train_loss,
+                    "train/recon_loss": train_recon_loss,
+                    "train/rq_loss": total_rq_loss,
+                    "train/training_time": training_end_time - training_start_time
+                })
 
             if train_loss < self.best_loss:
                 self.best_loss = train_loss
@@ -211,6 +230,17 @@ class Trainer(object):
                 ) % (epoch_idx, valid_end_time - valid_start_time, collision_rate)
 
                 self.logger.info(valid_score_output)
+                
+                # 记录验证指标到wandb
+                if self.use_wandb and WANDB_AVAILABLE:
+                    wandb.log({
+                        "epoch": epoch_idx,
+                        "eval/max_frequency": max_value,
+                        "eval/min_frequency": min_value,
+                        "eval/collision_rate": collision_rate,
+                        "eval/best_collision_rate": self.best_collision_rate,
+                        "eval/validation_time": valid_end_time - valid_start_time
+                    })
                 
                 # if epoch_idx > 1000:
                 # if epoch_idx % 10 == 0:
